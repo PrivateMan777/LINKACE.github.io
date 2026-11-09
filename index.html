@@ -116,11 +116,18 @@ input:focus, select:focus { border-color: var(--accent); }
     height: 45px;
     overflow: hidden;
     border-radius: 11px;
-    background: #25314a;
+    background: transparent;
     color: var(--accent);
     font-weight: 900;
 }
-.logo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: transparent;
+    mix-blend-mode: normal;
+    filter: none;
+}
 .info { min-width: 0; }
 .name { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; line-height: 1.35; }
 .meta { margin-top: 5px; color: var(--muted); font-size: 12px; }
@@ -141,9 +148,59 @@ footer { margin-top: 25px; color: #7786a1; font-size: 12px; line-height: 1.6; }
     .toolbar { display: grid; }
     .toolbar > * { width: 100%; }
 }
+
+/* Acceso mediante contraseña */
+#login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: radial-gradient(ellipse at top, #172441 0, #0b1020 65%);
+}
+.login-box {
+    width: min(100%, 390px);
+    padding: 30px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--panel);
+    box-shadow: 0 20px 60px #0008;
+    text-align: center;
+}
+.login-box h2 { margin: 0 0 8px; font-size: 24px; }
+.login-box p { margin: 0 0 22px; color: var(--muted); }
+.login-box input {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 12px;
+}
+.login-box button {
+    width: 100%;
+    padding: 13px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #07131a;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+#login-error { min-height: 20px; margin: 12px 0 0; color: #ff8585; font-size: 13px; }
+#protected-content[hidden], #login-screen[hidden] { display: none !important; }
 </style>
 </head>
 <body>
+<section id="login-screen" aria-label="Acceso protegido">
+    <form class="login-box" id="login-form">
+        <h2>Acceso privado</h2>
+        <p>Introduce la contraseña para acceder a los canales.</p>
+        <input id="password-input" type="password" placeholder="Contraseña" autocomplete="current-password" required autofocus>
+        <button type="submit">Entrar</button>
+        <div id="login-error" role="alert" aria-live="polite"></div>
+    </form>
+</section>
+<div id="protected-content" hidden>
 <header>
  <div class="kicker">Links Acestream by MrGlou</div>
  <h1>Canales Acestream</h1>
@@ -162,6 +219,7 @@ footer { margin-top: 25px; color: #7786a1; font-size: 12px; line-height: 1.6; }
  <div class="empty" id="empty">No se han encontrado canales con esa búsqueda.</div>
  <footer>Haz clic en un canal para abrir su enlace con AceStream. Necesitas tener AceStream instalado; la página no reproduce emisiones por sí misma.</footer>
 </main>
+</div>
 <script>
 const channels = [
     {
@@ -1031,6 +1089,37 @@ function renderChannels() {
 search.addEventListener('input', renderChannels);
 category.addEventListener('change', renderChannels);
 renderChannels();
+</script>
+<script>
+// Protección sencilla del acceso en este navegador.
+const PAGE_PASSWORD = 'fuenlacity';
+const loginScreen = document.getElementById('login-screen');
+const protectedContent = document.getElementById('protected-content');
+const loginForm = document.getElementById('login-form');
+const passwordInput = document.getElementById('password-input');
+const loginError = document.getElementById('login-error');
+
+function unlockPage() {
+    loginScreen.hidden = true;
+    protectedContent.hidden = false;
+}
+
+if (sessionStorage.getItem('mrglou_access') === 'granted') {
+    unlockPage();
+}
+
+loginForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (passwordInput.value === PAGE_PASSWORD) {
+        sessionStorage.setItem('mrglou_access', 'granted');
+        loginError.textContent = '';
+        unlockPage();
+    } else {
+        loginError.textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
+        passwordInput.value = '';
+        passwordInput.focus();
+    }
+});
 </script>
 </body>
 </html>
